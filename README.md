@@ -32,3 +32,16 @@ location /websocket { proxy_pass http://127.0.0.1:8080; proxy_http_version 1.1; 
 
 第三方登录：前端跳转 `/oauth/redirect/{type}?spa=1`，回调后后端把登录态写入 session 并跳回前端 `/oauth-login`，前端再调 `/api/oauth/session` 换取 token（token 不出现在 URL 里）。
 需要后端提供 `/api/search`、`/api/top100`、`/api/site`、`GET /api/settings`、`/api/oauth/session`（均已在 zzbbs 主仓库中实现）。
+
+## 发布与部署
+
+push 到 `main` 后，`.github/workflows/release-dist.yml` 会构建并把 `forum-ui.tar.gz` 发到固定 tag `deploy-latest` 的 release。
+
+挂载路径：站点根路径 `/`（构建使用默认 `base=/`）。
+
+服务器侧：
+1. 把 `deploy/deploy-forum-ui.sh` 放到 `/home/pybbs/`，执行 `bash deploy-forum-ui.sh`（下载走 mihomo 代理，原子替换，保留上一版 `forum-ui.bak`）。
+2. nginx 按 `deploy/nginx-forum.conf.example` 修改：`/` 指向静态目录，`/api`、`/common`、`/static`、`/oauth`、`/admin`、`/adminlogin`、`/active`、`/bot`、`/websocket` 仍转给后端。
+3. `nginx -t` 通过后再 `nginx -s reload`。
+
+回滚：`cd /home/pybbs && rm -rf forum-ui && mv forum-ui.bak forum-ui`。

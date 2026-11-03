@@ -1,0 +1,34 @@
+# 用户端 SPA 挂在 / ；后端接口、管理端、WebSocket、第三方登录回调仍然转给 Java（8089）
+# 加到现有 443 的 server { } 里，替换原来的 `location / { proxy_pass http://localhost:8089/; }`
+# 原有的 `location /api/upload { ... }`（带大小/超时限制的那段）保留不动，它比 /api/ 更具体，会优先匹配。
+
+# 1) 用户端静态文件，SPA 路由回退到 index.html
+location / {
+    root /home/pybbs/forum-ui;
+    try_files $uri $uri/ /index.html;
+}
+
+# 2) 转给后端的路径（不要被 SPA 吞掉）
+location ~ ^/(api|common|static|oauth|admin|adminlogin|active|bot)(/|$) {
+    proxy_pass http://localhost:8089;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+# 3) WebSocket 实时通知
+location /websocket {
+    proxy_pass http://localhost:8089/websocket;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_read_timeout 3600s;
+}
+
+# 4) 管理端 SPA（见 zzbbs-admin-web）
+# location /admin-ui/ { alias /home/pybbs/admin-ui/; try_files $uri $uri/ /admin-ui/index.html; }
+# 注意：上面第 2 段的正则里有 admin，会把 /admin-ui/ 也匹配走，
+# 所以管理端的 location 必须写成带 ^~ 的前缀匹配，优先级才高于正则：
+# location ^~ /admin-ui/ { alias /home/pybbs/admin-ui/; try_files $uri $uri/ /admin-ui/index.html; }
