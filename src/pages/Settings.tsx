@@ -3,12 +3,14 @@ import { Alert, Avatar, Box, Button, Checkbox, Divider, FormControlLabel, Paper,
 import { api, setToken, uploadFiles, User } from '../api'
 import { useAuth } from '../auth'
 import { useI18n } from '../i18n'
+import { useSite } from '../site'
 import { Status, Title, useAsync } from '../components'
 
 type Me = User & { telegramName?: string; emailNotification?: boolean; mobile?: string }
 
 export default function Settings() {
   const { t } = useI18n()
+  const site = useSite()
   const { updateUser } = useAuth()
   const { data, loading, error } = useAsync(() => api.get<Me>('/api/settings'), [])
   const [me, setMe] = useState<Me | null>(null)
@@ -42,7 +44,14 @@ export default function Settings() {
             <Button component="label" variant="outlined">{t('uploadAvatar')}
               <input hidden type="file" accept="image/*" onChange={(e) => {
                 const f = e.target.files?.[0]; e.target.value = ''
-                if (f) run(async () => { const [url] = await uploadFiles([f], 'avatar'); setMe({ ...me, avatar: url }); updateUser({ avatar: url }) })
+                if (f) run(async () => {
+                  const [url] = await uploadFiles([f], 'avatar', Number(site.uploadImageSizeLimit) || undefined)
+                  // 直传只是把文件放进了存储桶，还要把地址保存到用户资料里（后端只接受自己存储域名下的地址）。
+                  // PUT /api/settings 会整体更新资料，所以其它字段带上服务器上当前的值，避免被清空
+                  const cur = data!
+                  await api.put('/api/settings', { bio: cur.bio ?? '', website: cur.website ?? '', telegramName: cur.telegramName ?? '', emailNotification: String(!!cur.emailNotification), avatar: url })
+                  setMe({ ...me, avatar: url }); updateUser({ avatar: url })
+                })
               }} />
             </Button>
           </Stack>

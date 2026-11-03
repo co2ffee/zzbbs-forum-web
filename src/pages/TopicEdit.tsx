@@ -4,12 +4,14 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Alert, Autocomplete, Box, Button, Paper, Stack, TextField } from '@mui/material'
 import { api, Tag, uploadFiles } from '../api'
 import { useI18n } from '../i18n'
+import { useSite } from '../site'
 import { Markdown, Title } from '../components'
 
 interface F { title: string; content: string }
 
 export default function TopicEdit() {
   const { t } = useI18n()
+  const site = useSite()
   const { id } = useParams()
   const [sp] = useSearchParams()
   const editing = !!id
@@ -35,7 +37,8 @@ export default function TopicEdit() {
     if (!file) return
     setErr('')
     try {
-      const [url] = await uploadFiles([file], type)
+      const limit = Number(type === 'video' ? site.uploadVideoSizeLimit : site.uploadImageSizeLimit) || undefined
+      const [url] = await uploadFiles([file], type, limit)
       const snippet = type === 'video' ? `<video controls src="${url}"></video>` : `![](${url})`
       setValue('content', `${getValues('content')}\n${snippet}\n`)
     } catch (e: any) { setErr(e.message) }
