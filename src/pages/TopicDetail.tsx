@@ -41,7 +41,8 @@ export default function TopicDetail() {
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<{ id: number; content: string } | null>(null)
 
-  const reload = () => api.get<Detail>(`/api/topic/${id}`).then(setData)
+  // 点赞/评论等操作后的刷新不重复计浏览数（只有第一次打开详情页计一次）
+  const reload = () => api.get<Detail>(`/api/topic/${id}?countView=false`).then(setData)
   const guard = async (fn: () => Promise<unknown>) => {
     setMsg('')
     try { await fn() } catch (e: any) { setMsg(e.message) }
