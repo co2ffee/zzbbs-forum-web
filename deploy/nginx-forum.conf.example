@@ -1,6 +1,7 @@
 # 用户端 SPA 挂在 / ；后端接口、管理端、WebSocket、第三方登录回调仍然转给 Java（8089）
 # 加到现有 443 的 server { } 里，替换原来的 `location / { proxy_pass http://localhost:8089/; }`
-# 原有的 `location /api/upload { ... }`（带大小/超时限制的那段）保留不动，它比 /api/ 更具体，会优先匹配。
+# 原有的 `location /api/upload { ... }`（带大小/超时限制的那段）要保留，并且必须改成 `location ^~ /api/upload { ... }`：
+# 普通前缀 location 选出后 nginx 还会检查正则，正则匹配上就用正则，不加 ^~ 会被下面的 ^/(api|...) 抢走。
 
 # 1) 用户端静态文件，SPA 路由回退到 index.html
 location / {
@@ -41,6 +42,5 @@ location = /admin/index {
 
 # 5) 管理端 SPA（见 zzbbs-admin-web）
 # location /admin-ui/ { alias /home/pybbs/admin-ui/; try_files $uri $uri/ /admin-ui/index.html; }
-# 注意：上面第 2 段的正则里有 admin，会把 /admin-ui/ 也匹配走，
-# 所以管理端的 location 必须写成带 ^~ 的前缀匹配，优先级才高于正则：
+# 管理端 location 用 ^~ 前缀匹配，保证优先于任何正则（第 2 段的 admin(/|$) 本来也不会匹配 /admin-ui/）：
 # location ^~ /admin-ui/ { alias /home/pybbs/admin-ui/; try_files $uri $uri/ /admin-ui/index.html; }
