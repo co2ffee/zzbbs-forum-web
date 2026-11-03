@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import { Alert, Box, Button, Divider, Link, Paper, Stack, Tab, Tabs, TextField } from '@mui/material'
 import { api, User } from '../api'
 import { useAuth } from '../auth'
@@ -16,12 +16,15 @@ export default function Login() {
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm<F>()
   const { login } = useAuth()
   const nav = useNavigate()
+  const location = useLocation()
+  // 被路由守卫拦下时记着原来的地址，登录后回去
+  const from = (location.state as { from?: { pathname: string; search?: string } } | null)?.from
   const [mode, setMode] = useState<'password' | 'mobile'>('password')
   const [err, setErr] = useState('')
   const [info, setInfo] = useState('')
   const [k, setK] = useState(0)
 
-  const finish = (r: { user: User; token: string }) => { login(r.user, r.token); nav('/') }
+  const finish = (r: { user: User; token: string }) => { login(r.user, r.token); nav(from ? from.pathname + (from.search || '') : '/', { replace: true }) }
 
   const onSubmit = handleSubmit(async (v) => {
     setErr('')

@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { api, getToken, setToken, User } from './api'
+import { api, getToken, setToken, UNAUTHORIZED_EVENT, User } from './api'
 import { useSite } from './site'
 
 interface AuthCtx {
@@ -51,6 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.get<number>('/api/notification/notRead').then(setNotRead).catch(() => {})
   }, [])
   const clearNotRead = useCallback(() => setNotRead(0), [])
+
+  // 任意接口返回 401（token 失效）时回到未登录状态，路由守卫会跳到登录页
+  useEffect(() => {
+    const onUnauthorized = () => { localStorage.removeItem(USER_KEY); setUser(null); setNotRead(0) }
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized)
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized)
+  }, [])
 
   // 未读数：站点开启 websocket 时实时推送（协议同旧前台），否则每分钟轮询
   useEffect(() => {
