@@ -20,7 +20,7 @@ const dict = {
     unread: '未读', read: '已读', title: '标题', content: '内容（Markdown）', tagsHint: '标签（最多 5 个）',
     uploadImage: '上传图片', uploadVideo: '上传视频', language: 'English',
     notifyComment: '{0} 评论了你的话题 {1}', notifyReply: '{0} 回复了你在话题 {1} 中的评论',
-    notifyCollect: '{0} 收藏了你的话题 {1}', notifyOther: '{0} 与你的话题 {1} 有新动态', menu: '菜单',
+    notifyCollect: '{0} 收藏了你的话题 {1}', notifyOther: '{0} 与你的话题 {1} 有新动态', menu: '菜单', notFound: '页面不存在', backHome: '返回首页',
   },
   en: {
     tags: 'Tags', topTen: 'Top 100', publish: 'New topic', login: 'Log in', register: 'Sign up', logout: 'Log out',
@@ -40,7 +40,7 @@ const dict = {
     unread: 'Unread', read: 'Read', title: 'Title', content: 'Content (Markdown)', tagsHint: 'Tags (up to 5)',
     uploadImage: 'Upload image', uploadVideo: 'Upload video', language: '中文',
     notifyComment: '{0} commented on your topic {1}', notifyReply: '{0} replied to your comment in {1}',
-    notifyCollect: '{0} collected your topic {1}', notifyOther: '{0} has new activity on your topic {1}', menu: 'Menu',
+    notifyCollect: '{0} collected your topic {1}', notifyOther: '{0} has new activity on your topic {1}', menu: 'Menu', notFound: 'Page not found', backHome: 'Back to home',
   },
 } as const
 

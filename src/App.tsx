@@ -14,6 +14,7 @@ import Search from './pages/Search'
 import Top100 from './pages/Top100'
 import Settings from './pages/Settings'
 import OAuthLogin from './pages/OAuthLogin'
+import NotFound from './pages/NotFound'
 import UserList from './pages/UserList'
 import { Active, ChangeLanguage, CommentEdit, Logout } from './pages/Misc'
 import { ReactElement } from 'react'
@@ -54,7 +55,7 @@ export default function App() {
         <Route path="/oauth-login" element={<OAuthLogin />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )
