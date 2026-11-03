@@ -53,7 +53,7 @@ export default function Layout() {
           {mobile ? (
             <>
               <Box sx={{ flexGrow: 1 }} />
-              <IconButton color="inherit" size="small" onClick={() => setSearchOpen((v) => !v)} aria-label={t('search')}><SearchIcon /></IconButton>
+              {user && <IconButton color="inherit" size="small" onClick={() => setSearchOpen((v) => !v)} aria-label={t('search')}><SearchIcon /></IconButton>}
               {user && (
                 <IconButton color="inherit" size="small" onClick={() => nav('/notifications')} aria-label={t('notifications')}>
                   <Badge badgeContent={notRead} color="error"><NotificationsIcon /></Badge>
@@ -69,9 +69,14 @@ export default function Layout() {
             </>
           ) : (
             <>
-              <Button color="inherit" component={RouterLink} to="/tags">{t('tags')}</Button>
-              <Button color="inherit" component={RouterLink} to="/top100">{t('topTen')}</Button>
-              {searchBox(180)}
+              {/* 内容需登录后才能查看，未登录时不显示这些入口 */}
+              {user && (
+                <>
+                  <Button color="inherit" component={RouterLink} to="/tags">{t('tags')}</Button>
+                  <Button color="inherit" component={RouterLink} to="/top100">{t('topTen')}</Button>
+                  {searchBox(180)}
+                </>
+              )}
               <Box sx={{ flexGrow: 1 }} />
               <Button color="inherit" size="small" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>{t('language')}</Button>
               {user ? (
@@ -94,7 +99,7 @@ export default function Layout() {
           )}
         </Toolbar>
         {/* 窄屏：搜索框点图标后在下一行展开 */}
-        {mobile && searchOpen && <Toolbar sx={{ minHeight: 48, px: 1 }}>{searchBox('100%')}</Toolbar>}
+        {mobile && user && searchOpen && <Toolbar sx={{ minHeight: 48, px: 1 }}>{searchBox('100%')}</Toolbar>}
       </AppBar>
 
       {/* 登录用户的头像菜单；窄屏时把导航、发布、语言也收进来 */}
@@ -114,8 +119,6 @@ export default function Layout() {
         <MenuItem onClick={() => go('/login')}>{t('login')}</MenuItem>
         <MenuItem onClick={() => go('/register')}>{t('register')}</MenuItem>
         <Divider />
-        <MenuItem onClick={() => go('/tags')}>{t('tags')}</MenuItem>
-        <MenuItem onClick={() => go('/top100')}>{t('topTen')}</MenuItem>
         <MenuItem onClick={() => { setMenuAnchor(null); setLang(lang === 'zh' ? 'en' : 'zh') }}>{t('language')}</MenuItem>
       </Menu>
 
