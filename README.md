@@ -30,6 +30,8 @@ location /websocket { proxy_pass http://127.0.0.1:8080; proxy_http_version 1.1; 
 
 首页（全部/精华/最新/热门/无人问津）、标签、搜索、积分榜、话题详情（评论增删改、点赞、收藏、作者其他话题）、发布/编辑话题（图片、视频上传）、登录（账号密码 / 手机验证码 / 第三方）、注册、个人主页、个人设置（头像、资料、邮箱绑定与激活、改密码、刷新 token）、通知（开启 websocket 时实时推送，否则每分钟轮询）、中英文切换。
 
+**登录后才能查看**：除 `/login`、`/register`、`/active`、`/oauth-login`、`/logout`、`/changeLanguage` 外，所有页面都有路由守卫（`src/App.tsx` 的 `RequireAuth`），未登录跳 `/login`，原地址放在路由 state 里，登录后回到原地址；`src/api.ts` 收到 HTTP 401 时清掉本地登录态并触发 `AuthProvider` 回到未登录状态；未登录时顶栏隐藏标签、积分榜、搜索。后端对应开关是 `site.login_required`（默认开启），部署时先部署前端、再部署后端。
+
 第三方登录：前端跳转 `/oauth/redirect/{type}?spa=1`，回调后后端把登录态写入 session 并跳回前端 `/oauth-login`，前端再调 `/api/oauth/session` 换取 token（token 不出现在 URL 里）。
 需要后端提供 `/api/search`、`/api/top100`、`/api/site`、`GET /api/settings`、`/api/oauth/session`（均已在 zzbbs 主仓库中实现）。
 
