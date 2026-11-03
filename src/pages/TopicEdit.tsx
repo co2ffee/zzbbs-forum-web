@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Alert, Autocomplete, Box, Button, Paper, Stack, TextField } from '@mui/material'
 import { api, Tag, uploadFiles } from '../api'
 import { useI18n } from '../i18n'
@@ -11,6 +11,7 @@ interface F { title: string; content: string }
 export default function TopicEdit() {
   const { t } = useI18n()
   const { id } = useParams()
+  const [sp] = useSearchParams()
   const editing = !!id
   const nav = useNavigate()
   const { register, handleSubmit, reset, watch, setValue, getValues, formState: { errors, isSubmitting } } = useForm<F>({ defaultValues: { title: '', content: '' } })
@@ -19,6 +20,8 @@ export default function TopicEdit() {
   const [err, setErr] = useState('')
 
   useEffect(() => {
+    const preset = sp.get('tag')
+    if (!id && preset) setTags([preset])
     api.get<{ records: Tag[] }>('/api/tags').then((p) => setAllTags(p.records.map((t) => t.name))).catch(() => {})
     if (id) {
       api.get<{ topic: { title: string; content: string }; tags: Tag[] }>(`/api/topic/${id}`)

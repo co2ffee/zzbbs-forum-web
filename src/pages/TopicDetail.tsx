@@ -59,7 +59,7 @@ export default function TopicDetail() {
           <Avatar src={topicUser.avatar} sx={{ width: 24, height: 24 }} />
           <Typography component={RouterLink} to={`/user/${topicUser.username}`} variant="body2">{topicUser.username}</Typography>
           <Typography variant="caption" color="text.secondary">{fmtTime(topic.inTime)} · {topic.view} 浏览</Typography>
-          {tags.map((t) => <Chip key={t.id} size="small" label={t.name} component={RouterLink} to={`/tag/${encodeURIComponent(t.name)}`} clickable />)}
+          {tags.map((t) => <Chip key={t.id} size="small" label={t.name} component={RouterLink} to={`/topic/tag/${encodeURIComponent(t.name)}`} clickable />)}
         </Stack>
         <Divider sx={{ mb: 2 }} />
         <Markdown text={topic.content} style={topic.style} />
@@ -73,7 +73,7 @@ export default function TopicDetail() {
             await reload()
           })}>{data.collect ? t('uncollect') : t('collect')} ({data.collects.length})</Button>
           {mine && <>
-            <Button size="small" component={RouterLink} to={`/topic/${id}/edit`}>{t('edit')}</Button>
+            <Button size="small" component={RouterLink} to={`/topic/edit/${id}`}>{t('edit')}</Button>
             <Button size="small" color="error" onClick={() => confirm('确定删除该话题？') && guard(async () => { await api.del(`/api/topic/${id}`); nav('/') })}>{t('delete')}</Button>
           </>}
         </Stack>

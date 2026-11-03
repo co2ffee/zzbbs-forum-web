@@ -9,7 +9,8 @@ location / {
 }
 
 # 2) 转给后端的路径（不要被 SPA 吞掉）
-location ~ ^/(api|common|static|oauth|admin|adminlogin|active|bot)(/|$) {
+# 注意：/active（邮箱激活链接）由用户端处理，不要转给后端
+location ~ ^/(api|common|static|oauth|admin|adminlogin|bot)(/|$) {
     proxy_pass http://localhost:8089;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -27,7 +28,18 @@ location /websocket {
     proxy_read_timeout 3600s;
 }
 
-# 4) 管理端 SPA（见 zzbbs-admin-web）
+# 4) 老的后台页面地址跳到管理端 SPA（浏览器直接访问时 Accept 含 text/html；SPA 自己的接口请求不受影响）
+# /adminlogin 由后端自己 302 到 /admin-ui/login，不需要在这里处理
+location = /admin {
+    if ($http_accept ~* "text/html") { return 301 /admin-ui/; }
+    proxy_pass http://localhost:8089;
+}
+location = /admin/index {
+    if ($http_accept ~* "text/html") { return 301 /admin-ui/; }
+    proxy_pass http://localhost:8089;
+}
+
+# 5) 管理端 SPA（见 zzbbs-admin-web）
 # location /admin-ui/ { alias /home/pybbs/admin-ui/; try_files $uri $uri/ /admin-ui/index.html; }
 # 注意：上面第 2 段的正则里有 admin，会把 /admin-ui/ 也匹配走，
 # 所以管理端的 location 必须写成带 ^~ 的前缀匹配，优先级才高于正则：

@@ -12,7 +12,7 @@ export default function Tags() {
       <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" } }}>
         {data?.records.map((t) => (
           <div key={t.id}>
-            <Card><CardActionArea component={RouterLink} to={`/tag/${encodeURIComponent(t.name)}`}>
+            <Card><CardActionArea component={RouterLink} to={`/topic/tag/${encodeURIComponent(t.name)}`}>
               <CardContent sx={{ display: 'flex', gap: 2 }}>
                 <Avatar variant="rounded" src={t.icon}>{t.name[0]}</Avatar>
                 <div>

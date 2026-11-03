@@ -41,7 +41,11 @@ push 到 `main` 后，`.github/workflows/release-dist.yml` 会构建并把 `foru
 
 服务器侧：
 1. 把 `deploy/deploy-forum-ui.sh` 放到 `/home/pybbs/`，执行 `bash deploy-forum-ui.sh`（下载走 mihomo 代理，原子替换，保留上一版 `forum-ui.bak`）。
-2. nginx 按 `deploy/nginx-forum.conf.example` 修改：`/` 指向静态目录，`/api`、`/common`、`/static`、`/oauth`、`/admin`、`/adminlogin`、`/active`、`/bot`、`/websocket` 仍转给后端。
+2. nginx 按 `deploy/nginx-forum.conf.example` 修改：`/` 指向静态目录，`/api`、`/common`、`/static`、`/oauth`、`/admin`、`/adminlogin`、`/bot`、`/websocket` 仍转给后端（`/active` 邮箱激活链接由本前端处理，不要转给后端）。
 3. `nginx -t` 通过后再 `nginx -s reload`。
 
 回滚：`cd /home/pybbs && rm -rf forum-ui && mv forum-ui.bak forum-ui`。
+
+## 页面链接（与原来的 Java 页面保持一致）
+
+`/`、`/index`、`/topic/{id}`、`/topic/create?tag=`、`/topic/edit/{id}`、`/topic/tag/{name}`、`/comment/edit/{id}`、`/tags`、`/user/{username}`、`/user/{username}/{topics|comments|collects}`、`/settings`、`/notifications`、`/login`、`/register`、`/logout`、`/search?keyword=`、`/top100`、`/changeLanguage?lang=`、`/active?email=&code=`。详见主仓库 `FRONTEND_SPLIT.md`。
