@@ -1,4 +1,4 @@
-# zzbbs-react-front
+# zzbbs-forum-web
 
 基于 React 18+ / Vite / TypeScript / MUI 的 zzbbs 前端，对接后端 `/api` 接口。
 
