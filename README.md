@@ -46,6 +46,8 @@ push 到 `main` 后，`.github/workflows/release-dist.yml` 会构建并把 `foru
 
 回滚：`cd /home/pybbs && rm -rf forum-ui && mv forum-ui.bak forum-ui`。
 
+缓存：`index.html` 必须带 `Cache-Control: no-cache`，`/assets/` 带 hash 可以长期缓存（`immutable`），否则部署新版后老用户的浏览器可能继续用旧的 JS。配置见 `deploy/nginx-forum.conf.example`。
+
 ## 页面链接（与原来的 Java 页面保持一致）
 
 `/`、`/index`、`/topic/{id}`、`/topic/create?tag=`、`/topic/edit/{id}`、`/topic/tag/{name}`、`/comment/edit/{id}`、`/tags`、`/user/{username}`、`/user/{username}/{topics|comments|collects}`、`/settings`、`/notifications`、`/login`、`/register`、`/logout`、`/search?keyword=`、`/top100`、`/changeLanguage?lang=`、`/active?email=&code=`。详见主仓库 `FRONTEND_SPLIT.md`。
