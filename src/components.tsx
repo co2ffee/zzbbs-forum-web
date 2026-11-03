@@ -7,7 +7,25 @@ import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { fmtTime, Page, TopicItem } from './api'
 
-const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
+// html: true —— 话题里的视频是 <video> 标签（旧页面上传视频就是插入这种 HTML），需要保留原始 HTML。
+// 安全完全靠下面的 DOMPurify 净化：只放行文章需要的标签，去掉脚本、事件属性、javascript: 链接、表单、样式等。
+const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
+
+const PURIFY_CONFIG = {
+  ADD_TAGS: ['video', 'source'],
+  ADD_ATTR: ['controls', 'src', 'type', 'poster', 'target'],
+  // 表单/输入框可以被用来做钓鱼；style 属性可以做遮罩层覆盖整个页面；其余是常见的注入载体
+  FORBID_TAGS: ['form', 'input', 'button', 'textarea', 'select', 'option', 'style', 'iframe', 'object', 'embed', 'link', 'meta', 'base'],
+  FORBID_ATTR: ['style'],
+}
+
+// 外链统一在新窗口打开，并且不把来源页面信息带过去
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A' && node.getAttribute('href')) {
+    node.setAttribute('target', '_blank')
+    node.setAttribute('rel', 'noopener noreferrer')
+  }
+})
 
 // @用户名 转成个人主页链接（跳过代码块里的内容太复杂，这里只处理行内普通文本）
 const mention = (text: string) => text.replace(/(^|[\s>])@([A-Za-z0-9]{2,16})(?=$|[\s,.;:!?，。！？])/g, '$1[@$2](/user/$2)')
@@ -15,8 +33,8 @@ const mention = (text: string) => text.replace(/(^|[\s>])@([A-Za-z0-9]{2,16})(?=
 export function Markdown({ text, style }: { text: string; style?: string }) {
   // style=RICH 的历史内容是 HTML，MD 是 markdown，统一消毒后渲染
   const html = style === 'RICH' ? text : md.render(mention(text || ''))
-  return <Box className="md" sx={{ '& img': { maxWidth: '100%' }, '& pre': { overflow: 'auto', p: 1, bgcolor: 'grey.100' } }}
-    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html, { ADD_TAGS: ['video', 'source'], ADD_ATTR: ['controls', 'src', 'type', 'target'] }) }} />
+  return <Box className="md" sx={{ '& img, & video': { maxWidth: '100%' }, '& pre': { overflow: 'auto', p: 1, bgcolor: 'grey.100' } }}
+    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html, PURIFY_CONFIG) }} />
 }
 
 // 通用异步加载
