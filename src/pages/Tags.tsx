@@ -1,14 +1,17 @@
 import { Link as RouterLink } from 'react-router-dom'
 import { Avatar, Box, Card, CardActionArea, CardContent, Typography } from '@mui/material'
 import { api, Page, Tag } from '../api'
+import { useI18n } from '../i18n'
 import { Status, Title, useAsync } from '../components'
 
 export default function Tags() {
+  const { t: tr } = useI18n()
   const { data, loading, error } = useAsync(() => api.get<Page<Tag>>('/api/tags'), [])
   return (
     <>
       <Title>标签</Title>
       <Status loading={loading} error={error} />
+      {data && data.records.length === 0 && <Typography color="text.secondary">{tr('empty')}</Typography>}
       <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" } }}>
         {data?.records.map((t) => (
           <div key={t.id}>

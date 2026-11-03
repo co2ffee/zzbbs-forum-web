@@ -6,7 +6,9 @@ import { useAuth } from '../auth'
 import { useI18n } from '../i18n'
 import { Status, Title, useAsync } from '../components'
 
-interface N { id: number; username?: string; action: string; topicId: number; title?: string; inTime: string }
+interface N { id: number; username?: string; action: string; topicId: number; title?: string; inTime: string; content?: string }
+
+const ACTION_KEY = { COMMENT: 'notifyComment', REPLY: 'notifyReply', COLLECT: 'notifyCollect' } as const
 
 export default function Notifications() {
   const { refreshNotRead } = useAuth()
@@ -22,10 +24,11 @@ export default function Notifications() {
       <Paper><List disablePadding>
         {items.map((n) => (
           <ListItem key={n.id} divider component={RouterLink} to={`/topic/${n.topicId}`} sx={{ color: 'inherit' }}>
-            <ListItemText primary={`${n.username ?? ''} ${n.action} 了你的话题 ${n.title ?? ''}`} secondary={fmtTime(n.inTime)} />
+            <ListItemText primary={t(ACTION_KEY[n.action as keyof typeof ACTION_KEY] ?? 'notifyOther', n.username ?? '', n.title ?? '')}
+              secondary={`${fmtTime(n.inTime)}${n.content ? ' · ' + n.content.replace(/<[^>]+>/g, '').slice(0, 60) : ''}`} />
           </ListItem>
         ))}
-        {items.length === 0 && <ListItem><ListItemText secondary="暂无" /></ListItem>}
+        {items.length === 0 && <ListItem><ListItemText secondary={t('empty')} /></ListItem>}
       </List></Paper>
     </>
   )

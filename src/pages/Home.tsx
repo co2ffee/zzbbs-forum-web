@@ -16,7 +16,7 @@ export default function Home() {
   return (
     <>
       {sp.get('active') === 'true' && <Alert severity="success" sx={{ mb: 2 }}>{t('activated')}</Alert>}
-      <Tabs value={tab} onChange={(_, v) => setSp({ tab: v })} sx={{ mb: 2 }}>
+      <Tabs value={tab} onChange={(_, v) => setSp({ tab: v })} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile sx={{ mb: 2 }}>
         {TABS.map((v) => <Tab key={v} value={v} label={t(v)} />)}
       </Tabs>
       <Status loading={loading} error={error} />

@@ -38,12 +38,19 @@ export default function TopicDetail() {
   const [content, setContent] = useState('')
   const [reply, setReply] = useState<CommentNode | null>(null)
   const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<{ id: number; content: string } | null>(null)
 
   const reload = () => api.get<Detail>(`/api/topic/${id}`).then(setData)
   const guard = async (fn: () => Promise<unknown>) => {
     setMsg('')
     try { await fn() } catch (e: any) { setMsg(e.message) }
+  }
+  // 点赞/收藏这类“切换式”操作：请求期间禁用按钮，防止连点造成状态不同步
+  const toggle = async (fn: () => Promise<unknown>) => {
+    if (busy) return
+    setBusy(true)
+    try { await guard(fn) } finally { setBusy(false) }
   }
 
   if (loading || error || !data) return <Status loading={loading} error={error} />
@@ -64,10 +71,10 @@ export default function TopicDetail() {
         <Divider sx={{ mb: 2 }} />
         <Markdown text={topic.content} style={topic.style} />
         <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-          <Button size="small" startIcon={<ThumbUpIcon />} onClick={() => guard(async () => { if (!user) return nav('/login'); await api.get(`/api/topic/${id}/vote`); await reload() })}>
+          <Button size="small" disabled={busy} startIcon={<ThumbUpIcon />} onClick={() => toggle(async () => { if (!user) return nav('/login'); await api.get(`/api/topic/${id}/vote`); await reload() })}>
             {t('like')} {count(topic.upIds)}
           </Button>
-          <Button size="small" onClick={() => guard(async () => {
+          <Button size="small" disabled={busy} onClick={() => toggle(async () => {
             if (!user) return nav('/login')
             data.collect ? await api.del(`/api/collect/${id}`) : await api.post(`/api/collect/${id}`)
             await reload()
