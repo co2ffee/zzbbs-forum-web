@@ -20,6 +20,8 @@ export function camelize(v: any): any {
   return v
 }
 
+export const UNAUTHORIZED_EVENT = 'zzbbs:unauthorized'
+
 export class ApiError extends Error {}
 
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
@@ -34,6 +36,12 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   }
   // cache: 'no-store'：点赞等切换式操作是 GET 请求，不能让浏览器/代理缓存响应
   const res = await fetch(url, { method, headers, body: payload, credentials: 'include', cache: 'no-store' })
+  // 后端对未登录/token 无效的请求返回 401：清掉本地登录态，通知 AuthProvider 跳登录页
+  if (res.status === 401) {
+    setToken(null)
+    window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+    throw new ApiError('请先登录')
+  }
   let data: ApiResult<T>
   try {
     data = await res.json()

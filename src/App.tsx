@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import Layout from './Layout'
 import { useAuth } from './auth'
 import Home from './pages/Home'
@@ -17,7 +17,6 @@ import OAuthLogin from './pages/OAuthLogin'
 import NotFound from './pages/NotFound'
 import UserList from './pages/UserList'
 import { Active, ChangeLanguage, CommentEdit, Logout } from './pages/Misc'
-import { ReactElement } from 'react'
 
 // /index、/index.html 跳到 /，保留 ?tab=&pageNo=
 function IndexAlias() {
@@ -25,37 +24,43 @@ function IndexAlias() {
   return <Navigate to={{ pathname: '/', search }} replace />
 }
 
-function RequireAuth({ children }: { children: ReactElement }) {
+// 用户端内容必须登录后才能查看：未登录统一跳到 /login，登录后回到原来的地址
+function RequireAuth() {
   const { user } = useAuth()
-  return user ? children : <Navigate to="/login" replace />
+  const location = useLocation()
+  return user ? <Outlet /> : <Navigate to="/login" replace state={{ from: location }} />
 }
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/tags" element={<Tags />} />
-        <Route path="/topic/tag/:name" element={<TagTopics />} />
-        <Route path="/topic/:id" element={<TopicDetail />} />
-        <Route path="/topic/create" element={<RequireAuth><TopicEdit /></RequireAuth>} />
-        <Route path="/topic/edit/:id" element={<RequireAuth><TopicEdit /></RequireAuth>} />
-        <Route path="/comment/edit/:id" element={<RequireAuth><CommentEdit /></RequireAuth>} />
-        <Route path="/user/:username" element={<Profile />} />
-        <Route path="/user/:username/:tab" element={<UserList />} />
-        <Route path="/index" element={<IndexAlias />} />
-        <Route path="/index.html" element={<IndexAlias />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="/active" element={<Active />} />
-        <Route path="/changeLanguage" element={<ChangeLanguage />} />
-        <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/top100" element={<Top100 />} />
-        <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
-        <Route path="/oauth-login" element={<OAuthLogin />} />
+        {/* 不需要登录：登录、注册、邮箱激活、第三方登录回调、退出、切换语言 */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="/active" element={<Active />} />
+        <Route path="/oauth-login" element={<OAuthLogin />} />
+        <Route path="/logout" element={<Logout />} />
+        <Route path="/changeLanguage" element={<ChangeLanguage />} />
+        {/* 其余内容都要先登录 */}
+        <Route element={<RequireAuth />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/tags" element={<Tags />} />
+          <Route path="/topic/tag/:name" element={<TagTopics />} />
+          <Route path="/topic/create" element={<TopicEdit />} />
+          <Route path="/topic/edit/:id" element={<TopicEdit />} />
+          <Route path="/topic/:id" element={<TopicDetail />} />
+          <Route path="/comment/edit/:id" element={<CommentEdit />} />
+          <Route path="/user/:username" element={<Profile />} />
+          <Route path="/user/:username/:tab" element={<UserList />} />
+          <Route path="/index" element={<IndexAlias />} />
+          <Route path="/index.html" element={<IndexAlias />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/top100" element={<Top100 />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Route>
     </Routes>
   )
