@@ -43,12 +43,40 @@ export default function TopicDetail() {
   const formRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
+  // 手机上弹出输入法后，可视区域只剩一半多，评论框容易被挡住。
+  // 滚动目标按“当前可视区域”（visualViewport）算：评论框放在可视区域中间；输入法弹出/收起导致可视区域变化时再校正一次。
+  // 评论框在页面最底部，要滚到可视区域中间需要下面有空白，所以触屏设备聚焦输入框时在页面底部垫一段空白。
+  const [needSpace, setNeedSpace] = useState(false)
+  const coarse = () => typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
+  const revealForm = (smooth: boolean) => {
+    const el = formRef.current
+    if (!el) return
+    const vv = window.visualViewport
+    const viewH = vv ? vv.height : window.innerHeight
+    const rect = el.getBoundingClientRect()
+    // 顶部有固定的标题栏（约 56px）
+    const want = (vv?.offsetTop ?? 0) + Math.max(64, (viewH - rect.height) / 2)
+    if (Math.abs(rect.top - want) < 8) return
+    window.scrollBy({ top: rect.top - want, behavior: smooth ? 'smooth' : 'auto' })
+  }
+
   // 点“回复”后滚动到页面底部的评论框并聚焦（评论多时评论框在很下面，原来要自己拉下去）
   const startReply = (c: CommentNode) => {
     setReply(c)
+    if (coarse()) setNeedSpace(true)
     requestAnimationFrame(() => {
-      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      revealForm(true)
       inputRef.current?.focus({ preventScroll: true })
+      // 输入法弹出需要一点时间：这段时间内可视区域变化就重新校正
+      const vv = window.visualViewport
+      const onResize = () => revealForm(false)
+      vv?.addEventListener('resize', onResize)
+      window.addEventListener('resize', onResize)
+      setTimeout(() => {
+        vv?.removeEventListener('resize', onResize)
+        window.removeEventListener('resize', onResize)
+        revealForm(false)
+      }, 1200)
     })
   }
 
@@ -144,9 +172,10 @@ export default function TopicDetail() {
       )}
 
       {user ? (
+        <>
         <Paper ref={formRef} sx={{ p: 2 }}>
           {reply && <Chip label={`回复 @${reply.username}`} onDelete={() => setReply(null)} sx={{ mb: 1 }} />}
-          <TextField fullWidth multiline minRows={3} inputRef={inputRef} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
+          <TextField fullWidth multiline minRows={3} inputRef={inputRef} onFocus={() => coarse() && setNeedSpace(true)} onBlur={() => setNeedSpace(false)} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
           <Box sx={{ mt: 1 }}><UploadButtons onInsert={(snippet) => setContent((c) => appendSnippet(c, snippet))} /></Box>
           <Button sx={{ mt: 1 }} variant="contained" disabled={!content.trim()}
             onClick={() => guard(async () => {
@@ -154,6 +183,8 @@ export default function TopicDetail() {
               setContent(''); setReply(null); await reload()
             })}>{t('submitComment')}</Button>
         </Paper>
+        <Box sx={{ height: needSpace ? '60vh' : 0 }} />
+        </>
       ) : (
         <Alert severity="info"><RouterLink to="/login">{t('loginToComment')}</RouterLink></Alert>
       )}
