@@ -1,11 +1,13 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import {
-  Alert, Avatar, Box, Chip, CircularProgress, List, ListItem, ListItemAvatar, ListItemText, Pagination, Paper, Stack, Typography,
+  Alert, Avatar, Box, Button, Chip, CircularProgress, List, ListItem, ListItemAvatar, ListItemText, Pagination, Paper, Stack, Typography,
 } from '@mui/material'
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
-import { fmtTime, Page, TopicItem } from './api'
+import { fmtTime, Page, TopicItem, uploadFiles } from './api'
+import { useI18n } from './i18n'
+import { useSite } from './site'
 
 // html: true —— 话题里的视频是 <video> 标签（旧页面上传视频就是插入这种 HTML），需要保留原始 HTML。
 // 安全完全靠下面的 DOMPurify 净化：只放行文章需要的标签，去掉脚本、事件属性、javascript: 链接、表单、样式等。
@@ -95,3 +97,39 @@ export function Captcha({ onRefresh }: { onRefresh?: () => void }) {
 }
 
 export const Title = ({ children }: { children: ReactNode }) => <Typography variant="h5" sx={{ mb: 2 }}>{children}</Typography>
+
+// 上传图片/视频按钮：话题、评论的输入框共用。上传成功后把 markdown 图片 / <video> 标签交给 onInsert，由调用方追加到内容末尾。
+export function UploadButtons({ onInsert }: { onInsert: (snippet: string) => void }) {
+  const { t } = useI18n()
+  const site = useSite()
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const upload = async (file: File | undefined, type: 'topic' | 'video') => {
+    if (!file) return
+    setErr('')
+    setBusy(true)
+    try {
+      const limit = Number(type === 'video' ? site.uploadVideoSizeLimit : site.uploadImageSizeLimit) || undefined
+      const [url] = await uploadFiles([file], type, limit)
+      onInsert(type === 'video' ? `<video controls src="${url}"></video>` : `![](${url})`)
+    } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
+  }
+  return (
+    <Stack spacing={1}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <Button component="label" size="small" variant="outlined" disabled={busy}>{t('uploadImage')}
+          <input hidden type="file" accept="image/*" onChange={(e) => { upload(e.target.files?.[0], 'topic'); e.target.value = '' }} />
+        </Button>
+        <Button component="label" size="small" variant="outlined" disabled={busy}>{t('uploadVideo')}
+          <input hidden type="file" accept="video/mp4" onChange={(e) => { upload(e.target.files?.[0], 'video'); e.target.value = '' }} />
+        </Button>
+        {busy && <CircularProgress size={18} />}
+      </Stack>
+      {err && <Alert severity="error" onClose={() => setErr('')}>{err}</Alert>}
+    </Stack>
+  )
+}
+
+// 把片段追加到内容末尾（前面不是换行就先换一行）
+export const appendSnippet = (content: string, snippet: string) =>
+  `${content}${content && !content.endsWith('\n') ? '\n' : ''}${snippet}\n`

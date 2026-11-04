@@ -7,7 +7,7 @@ import ThumbUpIcon from '@mui/icons-material/ThumbUp'
 import { api, CommentNode, fmtTime, Tag, User } from '../api'
 import { useAuth } from '../auth'
 import { useI18n } from '../i18n'
-import { Markdown, Status, useAsync } from '../components'
+import { appendSnippet, Markdown, Status, UploadButtons, useAsync } from '../components'
 
 interface Detail {
   topic: { id: number; title: string; content: string; style?: string; inTime: string; view: number; userId: number; upIds?: string; top?: boolean; good?: boolean }
@@ -100,6 +100,7 @@ export default function TopicDetail() {
               {editing?.id === c.id ? (
                 <Box sx={{ my: 1 }}>
                   <TextField fullWidth multiline minRows={3} value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })} />
+                  <Box sx={{ mt: 1 }}><UploadButtons onInsert={(snippet) => setEditing((ed) => ed && { ...ed, content: appendSnippet(ed.content, snippet) })} /></Box>
                   <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                     <Button size="small" variant="contained" onClick={() => guard(async () => { await api.put(`/api/comment/${c.id}`, { content: editing.content }); setEditing(null); await reload() })}>{t('save')}</Button>
                     <Button size="small" onClick={() => setEditing(null)}>{t('cancel')}</Button>
@@ -135,6 +136,7 @@ export default function TopicDetail() {
         <Paper sx={{ p: 2 }}>
           {reply && <Chip label={`回复 @${reply.username}`} onDelete={() => setReply(null)} sx={{ mb: 1 }} />}
           <TextField fullWidth multiline minRows={3} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
+          <Box sx={{ mt: 1 }}><UploadButtons onInsert={(snippet) => setContent((c) => appendSnippet(c, snippet))} /></Box>
           <Button sx={{ mt: 1 }} variant="contained" disabled={!content.trim()}
             onClick={() => guard(async () => {
               await api.post('/api/comment', { content: reply ? `@${reply.username} ${content}` : content, topicId: id, commentId: reply?.id })
