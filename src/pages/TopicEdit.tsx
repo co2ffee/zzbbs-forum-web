@@ -2,16 +2,14 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Alert, Autocomplete, Box, Button, Paper, Stack, TextField } from '@mui/material'
-import { api, Tag, uploadFiles } from '../api'
+import { api, Tag } from '../api'
 import { useI18n } from '../i18n'
-import { useSite } from '../site'
-import { Markdown, Title } from '../components'
+import { appendSnippet, Markdown, Title, UploadButtons } from '../components'
 
 interface F { title: string; content: string }
 
 export default function TopicEdit() {
   const { t } = useI18n()
-  const site = useSite()
   const { id } = useParams()
   const [sp] = useSearchParams()
   const editing = !!id
@@ -32,18 +30,6 @@ export default function TopicEdit() {
     }
   }, [id, reset])
 
-  // 上传后把 markdown / video 标签插到内容末尾
-  const insertUpload = async (file: File | undefined, type: 'topic' | 'video') => {
-    if (!file) return
-    setErr('')
-    try {
-      const limit = Number(type === 'video' ? site.uploadVideoSizeLimit : site.uploadImageSizeLimit) || undefined
-      const [url] = await uploadFiles([file], type, limit)
-      const snippet = type === 'video' ? `<video controls src="${url}"></video>` : `![](${url})`
-      setValue('content', `${getValues('content')}\n${snippet}\n`)
-    } catch (e: any) { setErr(e.message) }
-  }
-
   const onSubmit = handleSubmit(async (v) => {
     setErr('')
     try {
@@ -61,14 +47,7 @@ export default function TopicEdit() {
           {err && <Alert severity="error">{err}</Alert>}
           <TextField label={t('title')} {...register('title', { required: '请输入标题' })} error={!!errors.title} helperText={errors.title?.message} />
           <TextField label={t('content')} multiline minRows={10} {...register('content')} />
-          <Stack direction="row" spacing={1}>
-            <Button component="label" size="small" variant="outlined">{t('uploadImage')}
-              <input hidden type="file" accept="image/*" onChange={(e) => { insertUpload(e.target.files?.[0], 'topic'); e.target.value = '' }} />
-            </Button>
-            <Button component="label" size="small" variant="outlined">{t('uploadVideo')}
-              <input hidden type="file" accept="video/mp4" onChange={(e) => { insertUpload(e.target.files?.[0], 'video'); e.target.value = '' }} />
-            </Button>
-          </Stack>
+          <UploadButtons onInsert={(snippet) => setValue('content', appendSnippet(getValues('content'), snippet))} />
           {!editing && (
             <Autocomplete multiple freeSolo options={allTags} value={tags}
               onChange={(_, v) => setTags(v.slice(0, 5))}

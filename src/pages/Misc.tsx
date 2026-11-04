@@ -4,7 +4,7 @@ import { Alert, Box, Button, CircularProgress, Paper, Stack, TextField } from '@
 import { api } from '../api'
 import { useAuth } from '../auth'
 import { useI18n } from '../i18n'
-import { Title } from '../components'
+import { appendSnippet, Title, UploadButtons } from '../components'
 
 // /logout
 export function Logout() {
@@ -59,6 +59,7 @@ export function CommentEdit() {
       <Stack spacing={2}>
         {err && <Alert severity="error">{err}</Alert>}
         <TextField multiline minRows={6} value={content} onChange={(e) => setContent(e.target.value)} />
+        <UploadButtons onInsert={(snippet) => setContent((c) => appendSnippet(c, snippet))} />
         <Button variant="contained" disabled={!content.trim()} onClick={async () => {
           try { await api.put(`/api/comment/${id}`, { content }); nav(`/topic/${topicId}`) } catch (e: any) { setErr(e.message) }
         }}>{t('save')}</Button>
