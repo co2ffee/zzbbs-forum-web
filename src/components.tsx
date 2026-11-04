@@ -5,7 +5,7 @@ import {
 } from '@mui/material'
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
-import { fmtTime, Page, TopicItem, uploadFiles } from './api'
+import { api, fmtTime, Page, TopicItem, uploadFiles, User } from './api'
 import { useI18n } from './i18n'
 import { useSite } from './site'
 
@@ -133,3 +133,27 @@ export function UploadButtons({ onInsert }: { onInsert: (snippet: string) => voi
 // 把片段追加到内容末尾（前面不是换行就先换一行）
 export const appendSnippet = (content: string, snippet: string) =>
   `${content}${content && !content.endsWith('\n') ? '\n' : ''}${snippet}\n`
+
+// 积分榜：电脑端放在首页话题列表右边（compact），窄屏仍然是 /top100 单独页面
+export function ScoreBoard({ compact = false }: { compact?: boolean }) {
+  const { t } = useI18n()
+  const { data, loading, error } = useAsync(() => api.get<User[]>('/api/top100'), [])
+  return (
+    <Paper sx={compact ? { position: 'sticky', top: 72, maxHeight: 'calc(100vh - 96px)', overflowY: 'auto' } : undefined}>
+      {compact && <Typography variant="subtitle1" sx={{ px: 2, py: 1.5, fontWeight: 600 }}>{t('topTen')}</Typography>}
+      <Status loading={loading} error={error} />
+      {data && (
+        <List disablePadding dense={compact}>
+          {data.map((u, i) => (
+            <ListItem key={u.id} divider={i < data.length - 1} component={RouterLink} to={`/user/${u.username}`} sx={{ color: 'inherit', gap: 1 }}
+              secondaryAction={<Typography variant={compact ? 'caption' : 'body1'} color="text.secondary">{t('score')} {u.score ?? 0}</Typography>}>
+              <Typography sx={{ width: compact ? 24 : 36, flexShrink: 0 }} color={i < 3 ? 'primary' : 'text.secondary'} variant={compact ? 'body2' : 'body1'}>{i + 1}</Typography>
+              <ListItemAvatar sx={{ minWidth: 0 }}><Avatar src={u.avatar} sx={compact ? { width: 28, height: 28 } : undefined}>{u.username[0]}</Avatar></ListItemAvatar>
+              <ListItemText primary={u.username} slotProps={{ primary: { noWrap: true } }} sx={{ minWidth: 0, pr: compact ? 5 : 0 }} />
+            </ListItem>
+          ))}
+        </List>
+      )}
+    </Paper>
+  )
+}

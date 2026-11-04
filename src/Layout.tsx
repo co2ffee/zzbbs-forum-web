@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react'
-import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   AppBar, Avatar, Badge, Box, Button, Container, Divider, IconButton, InputBase, Menu, MenuItem, Toolbar, Typography,
   useMediaQuery, useTheme,
@@ -18,6 +18,9 @@ export default function Layout() {
   const nav = useNavigate()
   const theme = useTheme()
   const mobile = useMediaQuery(theme.breakpoints.down('sm'))
+  // 电脑端积分榜在首页话题列表右边，顶栏不再放积分榜入口；首页容器也放宽给右侧积分榜留位置
+  const wide = useMediaQuery(theme.breakpoints.up('md'))
+  const { pathname } = useLocation()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [kw, setKw] = useState('')
@@ -73,7 +76,7 @@ export default function Layout() {
               {user && (
                 <>
                   <Button color="inherit" component={RouterLink} to="/tags">{t('tags')}</Button>
-                  <Button color="inherit" component={RouterLink} to="/top100">{t('topTen')}</Button>
+                  {!wide && <Button color="inherit" component={RouterLink} to="/top100">{t('topTen')}</Button>}
                   {searchBox(180)}
                 </>
               )}
@@ -122,7 +125,7 @@ export default function Layout() {
         <MenuItem onClick={() => { setMenuAnchor(null); setLang(lang === 'zh' ? 'en' : 'zh') }}>{t('language')}</MenuItem>
       </Menu>
 
-      <Container maxWidth="md" sx={{ py: { xs: 2, sm: 3 }, px: { xs: 1.5, sm: 3 } }}>
+      <Container maxWidth={wide && pathname === '/' ? 'lg' : 'md'} sx={{ py: { xs: 2, sm: 3 }, px: { xs: 1.5, sm: 3 } }}>
         <Outlet />
       </Container>
     </>
