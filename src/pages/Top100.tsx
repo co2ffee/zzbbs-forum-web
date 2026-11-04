@@ -1,30 +1,17 @@
-import { Link as RouterLink } from 'react-router-dom'
-import { Avatar, List, ListItem, ListItemAvatar, ListItemText, Paper, Typography } from '@mui/material'
-import { api, User } from '../api'
+import { Navigate } from 'react-router-dom'
+import { useMediaQuery, useTheme } from '@mui/material'
 import { useI18n } from '../i18n'
-import { Status, Title, useAsync } from '../components'
+import { ScoreBoard, Title } from '../components'
 
+// 电脑端积分榜在首页话题列表右边，老链接 /top100 直接回首页；窄屏（手机/平板竖屏）还是这个单独页面
 export default function Top100() {
   const { t } = useI18n()
-  const { data, loading, error } = useAsync(() => api.get<User[]>('/api/top100'), [])
+  const wide = useMediaQuery(useTheme().breakpoints.up('md'))
+  if (wide) return <Navigate to="/" replace />
   return (
     <>
       <Title>{t('topTen')}</Title>
-      <Status loading={loading} error={error} />
-      {data && (
-        <Paper>
-          <List disablePadding>
-            {data.map((u, i) => (
-              <ListItem key={u.id} divider component={RouterLink} to={`/user/${u.username}`} sx={{ color: 'inherit' }}
-                secondaryAction={<Typography color="text.secondary">{t('score')} {u.score ?? 0}</Typography>}>
-                <Typography sx={{ width: 36 }} color="text.secondary">{i + 1}</Typography>
-                <ListItemAvatar><Avatar src={u.avatar}>{u.username[0]}</Avatar></ListItemAvatar>
-                <ListItemText primary={u.username} />
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-      )}
+      <ScoreBoard />
     </>
   )
 }
