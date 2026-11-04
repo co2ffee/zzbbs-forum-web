@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 import {
   Alert, Avatar, Box, Button, Chip, Divider, IconButton, Paper, Stack, TextField, Typography,
@@ -40,6 +40,17 @@ export default function TopicDetail() {
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<{ id: number; content: string } | null>(null)
+  const formRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // 点“回复”后滚动到页面底部的评论框并聚焦（评论多时评论框在很下面，原来要自己拉下去）
+  const startReply = (c: CommentNode) => {
+    setReply(c)
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      inputRef.current?.focus({ preventScroll: true })
+    })
+  }
 
   // 点赞/评论等操作后的刷新不重复计浏览数（只有第一次打开详情页计一次）
   const reload = () => api.get<Detail>(`/api/topic/${id}?countView=false`).then(setData)
@@ -112,7 +123,7 @@ export default function TopicDetail() {
                   <ThumbUpIcon fontSize="inherit" />
                 </IconButton>
                 <Typography variant="caption">{count(c.upIds)}</Typography>
-                {user && <Button size="small" onClick={() => setReply(c)}>{t('reply')}</Button>}
+                {user && <Button size="small" onClick={() => startReply(c)}>{t('reply')}</Button>}
                 {user && user.id === c.userId && <Button size="small" onClick={() => setEditing({ id: c.id, content: c.content })}>{t('edit')}</Button>}
                 {user && user.id === c.userId && (
                   <Button size="small" color="error" onClick={() => confirm('确定删除评论？') && guard(async () => { await api.del(`/api/comment/${c.id}`); await reload() })}>{t('delete')}</Button>
@@ -133,9 +144,9 @@ export default function TopicDetail() {
       )}
 
       {user ? (
-        <Paper sx={{ p: 2 }}>
+        <Paper ref={formRef} sx={{ p: 2 }}>
           {reply && <Chip label={`回复 @${reply.username}`} onDelete={() => setReply(null)} sx={{ mb: 1 }} />}
-          <TextField fullWidth multiline minRows={3} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
+          <TextField fullWidth multiline minRows={3} inputRef={inputRef} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
           <Box sx={{ mt: 1 }}><UploadButtons onInsert={(snippet) => setContent((c) => appendSnippet(c, snippet))} /></Box>
           <Button sx={{ mt: 1 }} variant="contained" disabled={!content.trim()}
             onClick={() => guard(async () => {
