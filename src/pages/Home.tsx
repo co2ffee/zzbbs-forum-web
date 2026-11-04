@@ -27,7 +27,7 @@ export default function Home() {
   )
   if (!wide) return main
   return (
-    <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
+    <Box sx={{ display: 'flex', gap: 3 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>{main}</Box>
       <Box sx={{ width: 300, flexShrink: 0 }}><ScoreBoard compact /></Box>
     </Box>
