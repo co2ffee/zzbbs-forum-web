@@ -175,12 +175,14 @@ export default function TopicDetail() {
         <>
         <Paper ref={formRef} sx={{ p: 2 }}>
           {reply && <Chip label={`回复 @${reply.username}`} onDelete={() => setReply(null)} sx={{ mb: 1 }} />}
-          <TextField fullWidth multiline minRows={3} inputRef={inputRef} onFocus={() => coarse() && setNeedSpace(true)} onBlur={() => setNeedSpace(false)} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
+          <TextField fullWidth multiline minRows={3} inputRef={inputRef} onFocus={() => coarse() && setNeedSpace(true)} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
           <Box sx={{ mt: 1 }}><UploadButtons onInsert={(snippet) => setContent((c) => appendSnippet(c, snippet))} /></Box>
-          <Button sx={{ mt: 1 }} variant="contained" disabled={!content.trim()}
+          {/* 手机上点按钮时输入框会先失焦、输入法收起、页面高度变化，按钮被挪走，第一下点击落空（要点两次）。
+              onMouseDown 阻止默认行为，让输入框保持焦点，点击才会落在按钮上；底部的空白也不在失焦时去掉，提交成功后再去掉 */}
+          <Button sx={{ mt: 1 }} variant="contained" disabled={!content.trim()} onMouseDown={(e) => e.preventDefault()}
             onClick={() => guard(async () => {
               await api.post('/api/comment', { content: reply ? `@${reply.username} ${content}` : content, topicId: id, commentId: reply?.id })
-              setContent(''); setReply(null); await reload()
+              setContent(''); setReply(null); setNeedSpace(false); await reload()
             })}>{t('submitComment')}</Button>
         </Paper>
         <Box sx={{ height: needSpace ? '60vh' : 0 }} />
