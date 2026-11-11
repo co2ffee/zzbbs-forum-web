@@ -86,6 +86,16 @@ export default function TopicDetail() {
     setMsg('')
     try { await fn() } catch (e: any) { setMsg(e.message) }
   }
+  const touchY = useRef<number | null>(null)
+  const submitting = useRef(false)
+  const submitComment = () => {
+    if (!content.trim() || submitting.current) return
+    submitting.current = true
+    guard(async () => {
+      await api.post('/api/comment', { content: reply ? `@${reply.username} ${content}` : content, topicId: id, commentId: reply?.id })
+      setContent(''); setReply(null); setNeedSpace(false); await reload()
+    }).finally(() => { submitting.current = false })
+  }
   // 点赞/收藏这类“切换式”操作：请求期间禁用按钮，防止连点造成状态不同步
   const toggle = async (fn: () => Promise<unknown>) => {
     if (busy) return
@@ -177,13 +187,20 @@ export default function TopicDetail() {
           {reply && <Chip label={`回复 @${reply.username}`} onDelete={() => setReply(null)} sx={{ mb: 1 }} />}
           <TextField fullWidth multiline minRows={3} inputRef={inputRef} onFocus={() => coarse() && setNeedSpace(true)} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
           <Box sx={{ mt: 1 }}><UploadButtons onInsert={(snippet) => setContent((c) => appendSnippet(c, snippet))} /></Box>
-          {/* 手机上点按钮时输入框会先失焦、输入法收起、页面高度变化，按钮被挪走，第一下点击落空（要点两次）。
-              onMouseDown 阻止默认行为，让输入框保持焦点，点击才会落在按钮上；底部的空白也不在失焦时去掉，提交成功后再去掉 */}
+          {/* 手机上点“发表评论”时，输入框失焦、输入法收起、页面高度变化，按钮在手指按下和抬起之间被挪走，
+              浏览器的 click 落在别处，第一下点击落空（要点两次）。所以触屏上不等 click：手指抬起（touchend，
+              目标永远是按下时的那个按钮）且没有明显滑动就直接提交，并阻止后续的模拟 click 防止重复提交；
+              鼠标/键盘仍走 onClick。 */}
           <Button sx={{ mt: 1 }} variant="contained" disabled={!content.trim()} onMouseDown={(e) => e.preventDefault()}
-            onClick={() => guard(async () => {
-              await api.post('/api/comment', { content: reply ? `@${reply.username} ${content}` : content, topicId: id, commentId: reply?.id })
-              setContent(''); setReply(null); setNeedSpace(false); await reload()
-            })}>{t('submitComment')}</Button>
+            onTouchStart={(e) => { touchY.current = e.touches[0]?.clientY ?? null }}
+            onTouchEnd={(e) => {
+              const y0 = touchY.current; touchY.current = null
+              const y1 = e.changedTouches[0]?.clientY
+              if (y0 == null || y1 == null || Math.abs(y1 - y0) > 10) return // 滑动/滚动，不是点按
+              e.preventDefault()
+              submitComment()
+            }}
+            onClick={submitComment}>{t('submitComment')}</Button>
         </Paper>
         <Box sx={{ height: needSpace ? '60vh' : 0 }} />
         </>
