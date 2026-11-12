@@ -12,6 +12,7 @@ import Profile from './pages/Profile'
 import Notifications from './pages/Notifications'
 import Search from './pages/Search'
 import Top100 from './pages/Top100'
+import Exchange from './pages/Exchange'
 import Settings from './pages/Settings'
 import OAuthLogin from './pages/OAuthLogin'
 import NotFound from './pages/NotFound'
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/search" element={<Search />} />
           <Route path="/top100" element={<Top100 />} />
+          <Route path="/exchange" element={<Exchange />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>
