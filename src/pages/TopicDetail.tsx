@@ -60,23 +60,33 @@ export default function TopicDetail() {
     window.scrollBy({ top: rect.top - want, behavior: smooth ? 'smooth' : 'auto' })
   }
 
+  // 把评论框滚到可视区域里；输入法弹出需要一点时间，这段时间内可视区域变化就重新校正
+  const revealTimer = useRef<{ stop: () => void } | null>(null)
+  const trackReveal = () => {
+    revealTimer.current?.stop()
+    revealForm(true)
+    const vv = window.visualViewport
+    const onResize = () => revealForm(false)
+    vv?.addEventListener('resize', onResize)
+    window.addEventListener('resize', onResize)
+    const timer = setTimeout(() => stop(), 1200)
+    const stop = () => {
+      clearTimeout(timer)
+      vv?.removeEventListener('resize', onResize)
+      window.removeEventListener('resize', onResize)
+      revealForm(false)
+      if (revealTimer.current?.stop === stop) revealTimer.current = null
+    }
+    revealTimer.current = { stop }
+  }
+
   // 点“回复”后滚动到页面底部的评论框并聚焦（评论多时评论框在很下面，原来要自己拉下去）
   const startReply = (c: CommentNode) => {
     setReply(c)
     if (coarse()) setNeedSpace(true)
     requestAnimationFrame(() => {
-      revealForm(true)
+      trackReveal()
       inputRef.current?.focus({ preventScroll: true })
-      // 输入法弹出需要一点时间：这段时间内可视区域变化就重新校正
-      const vv = window.visualViewport
-      const onResize = () => revealForm(false)
-      vv?.addEventListener('resize', onResize)
-      window.addEventListener('resize', onResize)
-      setTimeout(() => {
-        vv?.removeEventListener('resize', onResize)
-        window.removeEventListener('resize', onResize)
-        revealForm(false)
-      }, 1200)
     })
   }
 
@@ -93,7 +103,11 @@ export default function TopicDetail() {
     submitting.current = true
     guard(async () => {
       await api.post('/api/comment', { content: reply ? `@${reply.username} ${content}` : content, topicId: id, commentId: reply?.id })
-      setContent(''); setReply(null); setNeedSpace(false); await reload()
+      setContent(''); setReply(null)
+      // 发表后收起输入法：输入框还聚焦着的话，输入法一直盖着页面底部的评论框（评论框在页面最底部）；
+      // 失焦会让输入法收起，底部空白也跟着去掉
+      inputRef.current?.blur()
+      await reload()
     }).finally(() => { submitting.current = false })
   }
   // 点赞/收藏这类“切换式”操作：请求期间禁用按钮，防止连点造成状态不同步
@@ -185,7 +199,7 @@ export default function TopicDetail() {
         <>
         <Paper ref={formRef} sx={{ p: 2 }}>
           {reply && <Chip label={`回复 @${reply.username}`} onDelete={() => setReply(null)} sx={{ mb: 1 }} />}
-          <TextField fullWidth multiline minRows={3} inputRef={inputRef} onFocus={() => coarse() && setNeedSpace(true)} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
+          <TextField fullWidth multiline minRows={3} inputRef={inputRef} onFocus={() => { if (coarse()) { setNeedSpace(true); trackReveal() } }} onBlur={() => setNeedSpace(false)} placeholder={t('commentPlaceholder')} value={content} onChange={(e) => setContent(e.target.value)} />
           <Box sx={{ mt: 1 }}><UploadButtons onInsert={(snippet) => setContent((c) => appendSnippet(c, snippet))} /></Box>
           {/* 手机上点“发表评论”时，输入框失焦、输入法收起、页面高度变化，按钮在手指按下和抬起之间被挪走，
               浏览器的 click 落在别处，第一下点击落空（要点两次）。所以触屏上不等 click：手指抬起（touchend，
