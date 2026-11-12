@@ -8,14 +8,40 @@ import { useAuth } from '../auth'
 import { useI18n } from '../i18n'
 import { Status, Title, useAsync } from '../components'
 
-interface Product { id: number; name: string; image?: string; description?: string; score: number; unlimited: boolean; stock: number; soldOut: boolean }
+interface Reward { text?: string | null; type?: 'image' | 'video' | null; url?: string | null }
+interface Product { id: number; name: string; image?: string; description?: string; score: number; unlimited: boolean; stock: number; soldOut: boolean; delivers?: string[] }
 interface ProductsData { products: Product[]; score: number }
-interface Order { id: number; productName: string; productImage?: string; score: number; contact?: string; status: number; remark?: string; inTime: string }
+interface Order { id: number; productName: string; productImage?: string; score: number; status: number; remark?: string; inTime: string; reward?: Reward | null }
 
 function Cover({ name, image }: { name: string; image?: string }) {
   return image
     ? <Box component="img" src={image} alt={name} loading="lazy" sx={{ width: '100%', height: 160, objectFit: 'cover', display: 'block', bgcolor: 'action.hover' }} />
     : <Box sx={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'action.hover', color: 'text.secondary', fontSize: 48 }}>{name[0]}</Box>
+}
+
+// 兑换到的内容：文本（可复制）、图片、视频
+function RewardView({ reward }: { reward: Reward }) {
+  const { t } = useI18n()
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(reward.text ?? ''); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* 复制失败（浏览器不允许）时用户可以手动选中复制 */ }
+  }
+  return (
+    <Stack spacing={1.5}>
+      {reward.text && (
+        <Box>
+          <Typography sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', bgcolor: 'action.hover', p: 1.5, borderRadius: 1, userSelect: 'text' }}>{reward.text}</Typography>
+          <Button size="small" onClick={copy} sx={{ mt: 0.5 }}>{copied ? t('copied') : t('copy')}</Button>
+        </Box>
+      )}
+      {reward.url && reward.type === 'video' && <Box component="video" src={reward.url} controls sx={{ width: '100%', maxHeight: '60vh', bgcolor: '#000' }} />}
+      {reward.url && reward.type !== 'video' && (
+        <Box component="a" href={reward.url} target="_blank" rel="noopener noreferrer">
+          <Box component="img" src={reward.url} alt="" sx={{ maxWidth: '100%', maxHeight: '60vh', display: 'block' }} />
+        </Box>
+      )}
+    </Stack>
+  )
 }
 
 // 积分兑换：商品（名称、图片、所需积分）由后台配置
@@ -27,7 +53,7 @@ export default function Exchange() {
   const { data, loading, error } = useAsync(() => api.get<ProductsData>('/api/exchange/products'), [key])
   const [score, setScore] = useState<number | null>(null)
   const [target, setTarget] = useState<Product | null>(null)
-  const [contact, setContact] = useState('')
+  const [got, setGot] = useState<{ name: string; reward: Reward } | null>(null) // 刚兑换到的内容
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
@@ -36,15 +62,16 @@ export default function Exchange() {
   // 所以没设置过就先用接口返回的积分
   const myScore = score ?? data?.score ?? 0
 
-  const open = (p: Product) => { setTarget(p); setContact(''); setMsg(null) }
+  const open = (p: Product) => { setTarget(p); setMsg(null) }
   const doExchange = async () => {
     if (!target || busy) return
     setBusy(true)
     try {
-      const r = await api.post<{ cost: number; totalScore: number }>(`/api/exchange/${target.id}`, { contact })
+      const r = await api.post<{ cost: number; totalScore: number; reward?: Reward | null }>(`/api/exchange/${target.id}`)
       setScore(r.totalScore)
       updateUser({ score: r.totalScore })
       setMsg({ ok: true, text: t('exchangeOk', String(r.cost)) })
+      if (r.reward && (r.reward.text || r.reward.url)) setGot({ name: target.name, reward: r.reward })
       setTarget(null)
       setKey((k) => k + 1) // 刷新库存
     } catch (e: any) {
@@ -84,6 +111,11 @@ export default function Exchange() {
                         <Chip size="small" color="primary" variant="outlined" label={t('exchangeNeed', String(p.score))} />
                         {p.soldOut ? <Chip size="small" label={t('soldOut')} /> : !p.unlimited && <Typography variant="caption" color="text.secondary">{t('exchangeStock', String(p.stock))}</Typography>}
                       </Stack>
+                      {!!p.delivers?.length && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                          {t('exchangeGets', p.delivers.map((d) => t(d === 'video' ? 'rewardVideo' : d === 'image' ? 'rewardImage' : 'rewardText')).join('、'))}
+                        </Typography>
+                      )}
                     </CardContent>
                     <CardActions sx={{ px: 2, pb: 2 }}>
                       <Button fullWidth variant="contained" disabled={p.soldOut || !enough} onClick={() => open(p)}>
@@ -100,12 +132,16 @@ export default function Exchange() {
 
       {tab === 'orders' && <MyOrders refreshKey={key} />}
 
+      <Dialog open={!!got} onClose={() => setGot(null)} fullWidth maxWidth="sm">
+        <DialogTitle>{t('exchangeDoneTitle')}{got ? `：${got.name}` : ''}</DialogTitle>
+        <DialogContent>{got && <RewardView reward={got.reward} />}</DialogContent>
+        <DialogActions><Button variant="contained" onClick={() => setGot(null)}>{t('confirm')}</Button></DialogActions>
+      </Dialog>
+
       <Dialog open={!!target} onClose={() => !busy && setTarget(null)} fullWidth maxWidth="xs">
         <DialogTitle>{t('exchange')}</DialogTitle>
         <DialogContent>
-          {target && <Typography sx={{ mb: 2 }}>{t('exchangeConfirm', String(target.score), target.name)}</Typography>}
-          <TextField fullWidth multiline minRows={2} label={t('exchangeContact')} placeholder={t('exchangeContactHint')} value={contact}
-            onChange={(e) => setContact(e.target.value)} slotProps={{ htmlInput: { maxLength: 500 } }} />
+          {target && <Typography>{t('exchangeConfirm', String(target.score), target.name)}</Typography>}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setTarget(null)} disabled={busy}>{t('cancel')}</Button>
@@ -138,9 +174,22 @@ function MyOrders({ refreshKey }: { refreshKey: number }) {
                 {o.remark && <Typography variant="body2">{t('remark')}：{o.remark}</Typography>}
               </Box>
             </Stack>
+            {o.reward && (o.reward.text || o.reward.url) && <OrderReward reward={o.reward} />}
           </Card>
         ))}
       </Stack>
     </>
+  )
+}
+
+// 我的兑换里点开查看兑换到的内容（取消的订单后端不再返回内容）
+function OrderReward({ reward }: { reward: Reward }) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  return (
+    <Box sx={{ px: 1.5, pb: 1.5 }}>
+      <Button size="small" onClick={() => setOpen((v) => !v)}>{open ? t('hideReward') : t('viewReward')}</Button>
+      {open && <Box sx={{ mt: 1 }}><RewardView reward={reward} /></Box>}
+    </Box>
   )
 }
