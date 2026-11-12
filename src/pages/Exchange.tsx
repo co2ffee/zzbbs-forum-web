@@ -32,6 +32,9 @@ export default function Exchange() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   useEffect(() => { if (data) setScore(data.score ?? 0) }, [data])
+  // 积分第一次渲染时 score 状态还是 null（useEffect 在渲染之后才设置），直接用它判断会让按钮先闪一下“积分不足”；
+  // 所以没设置过就先用接口返回的积分
+  const myScore = score ?? data?.score ?? 0
 
   const open = (p: Product) => { setTarget(p); setContact(''); setMsg(null) }
   const doExchange = async () => {
@@ -55,7 +58,7 @@ export default function Exchange() {
     <>
       <Stack direction="row" sx={{ alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <Title>{t('exchange')}</Title>
-        {score != null && <Typography color="text.secondary" sx={{ mb: 2 }}>{t('myScore')}：<b>{score}</b></Typography>}
+        {(score != null || data) && <Typography color="text.secondary" sx={{ mb: 2 }}>{t('myScore')}：<b>{myScore}</b></Typography>}
       </Stack>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab value="products" label={t('exchangeProducts')} />
@@ -70,7 +73,7 @@ export default function Exchange() {
           {data && (
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' } }}>
               {data.products.map((p) => {
-                const enough = (score ?? 0) >= p.score
+                const enough = myScore >= p.score
                 return (
                   <Card key={p.id} sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Cover name={p.name} image={p.image} />
