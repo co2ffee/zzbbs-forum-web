@@ -3,6 +3,10 @@ import { createContext, ReactNode, useContext, useState } from 'react'
 // 轻量中英文切换（对应旧前台的 changeLanguage）
 const dict = {
   zh: {
+    exchange: '积分兑换', myScore: '我的积分', exchangeBtn: '兑换', exchangeNeed: '需要 {0} 积分', exchangeStock: '剩余 {0} 件', soldOut: '已兑完', notEnough: '积分不足',
+    exchangeConfirm: '用 {0} 积分兑换「{1}」？', exchangeContact: '联系方式 / 收货信息（可选）', exchangeContactHint: '比如微信号、手机号、收货地址，方便管理员联系你',
+    exchangeOk: '兑换成功，花费 {0} 积分，管理员会尽快处理', exchangeEmpty: '暂时没有可以兑换的商品', myExchanges: '我的兑换', exchangeProducts: '商品', exchangeNoOrders: '还没有兑换记录',
+    orderPending: '待处理', orderDone: '已处理', orderCanceled: '已取消（积分已退还）', remark: '备注', confirm: '确定',
     checkin: '每日签到', checkinBtn: '签到', checkedInBtn: '今日已签到', checkinRange: '每天随机获得 {0}~{1} 积分', checkinFixed: '每天获得 {0} 积分',
     checkinGot: '签到成功，获得 {0} 积分', checkinToday: '今天获得 {0} 积分', checkinStreak: '连续签到 {0} 天',
     tags: '标签', topTen: '积分榜', publish: '发布话题', login: '登录', register: '注册', logout: '退出登录',
@@ -25,6 +29,10 @@ const dict = {
     notifyCollect: '{0} 收藏了你的话题 {1}', notifyOther: '{0} 与你的话题 {1} 有新动态', menu: '菜单', notFound: '页面不存在', backHome: '返回首页',
   },
   en: {
+    exchange: 'Redeem', myScore: 'My points', exchangeBtn: 'Redeem', exchangeNeed: '{0} points', exchangeStock: '{0} left', soldOut: 'Sold out', notEnough: 'Not enough points',
+    exchangeConfirm: 'Redeem "{1}" for {0} points?', exchangeContact: 'Contact / shipping info (optional)', exchangeContactHint: 'e.g. WeChat, phone number or address so the admin can reach you',
+    exchangeOk: 'Redeemed for {0} points. The admin will process it soon', exchangeEmpty: 'Nothing to redeem yet', myExchanges: 'My redemptions', exchangeProducts: 'Products', exchangeNoOrders: 'No redemptions yet',
+    orderPending: 'Pending', orderDone: 'Done', orderCanceled: 'Canceled (points refunded)', remark: 'Note', confirm: 'OK',
     checkin: 'Daily check-in', checkinBtn: 'Check in', checkedInBtn: 'Checked in today', checkinRange: 'Earn {0}-{1} points at random every day', checkinFixed: 'Earn {0} points every day',
     checkinGot: 'Checked in! +{0} points', checkinToday: 'Earned {0} points today', checkinStreak: '{0}-day streak',
     tags: 'Tags', topTen: 'Top 100', publish: 'New topic', login: 'Log in', register: 'Sign up', logout: 'Log out',
