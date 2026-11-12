@@ -6,6 +6,7 @@ import {
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { api, fmtTime, Page, TopicItem, uploadFiles, User } from './api'
+import { useAuth } from './auth'
 import { useI18n } from './i18n'
 import { useSite } from './site'
 
@@ -135,11 +136,12 @@ export const appendSnippet = (content: string, snippet: string) =>
   `${content}${content && !content.endsWith('\n') ? '\n' : ''}${snippet}\n`
 
 // 积分榜：电脑端放在首页话题列表右边（compact），窄屏仍然是 /top100 单独页面
-export function ScoreBoard({ compact = false }: { compact?: boolean }) {
+export function ScoreBoard({ compact = false, refreshKey = 0 }: { compact?: boolean; refreshKey?: number }) {
   const { t } = useI18n()
-  const { data, loading, error } = useAsync(() => api.get<User[]>('/api/top100'), [])
+  const { data, loading, error } = useAsync(() => api.get<User[]>('/api/top100'), [refreshKey])
   return (
-    <Paper sx={compact ? { position: 'sticky', top: 72, maxHeight: 'calc(100vh - 96px)', overflowY: 'auto' } : undefined}>
+    // compact 时由外层容器负责固定在右侧（和签到卡片一起），这里只负责在剩余高度里滚动
+    <Paper sx={compact ? { flex: 1, minHeight: 0, overflowY: 'auto' } : undefined}>
       {compact && <Typography variant="subtitle1" sx={{ px: 2, py: 1.5, fontWeight: 600 }}>{t('topTen')}</Typography>}
       <Status loading={loading} error={error} />
       {data && (
@@ -154,6 +156,59 @@ export function ScoreBoard({ compact = false }: { compact?: boolean }) {
           ))}
         </List>
       )}
+    </Paper>
+  )
+}
+
+interface CheckinStatus { enabled: boolean; checkedIn: boolean; todayScore?: number | null; streak: number; scoreMin: number; scoreMax: number }
+
+// 每日签到：每天随机获得积分，范围由后台设置。后端没开启、接口还没上线、请求失败时整块隐藏，不影响首页。
+export function CheckinCard({ onCheckedIn }: { onCheckedIn?: () => void }) {
+  const { t } = useI18n()
+  const { updateUser } = useAuth()
+  const [st, setSt] = useState<CheckinStatus | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    api.get<CheckinStatus>('/api/checkin/status').then((d) => alive && setSt(d)).catch(() => {})
+    return () => { alive = false }
+  }, [])
+
+  if (!st || !st.enabled) return null
+
+  const doCheckin = async () => {
+    if (busy || st.checkedIn) return
+    setBusy(true)
+    setMsg(null)
+    try {
+      const r = await api.post<{ score: number; streak: number; totalScore: number }>('/api/checkin')
+      setSt({ ...st, checkedIn: true, todayScore: r.score, streak: r.streak })
+      updateUser({ score: r.totalScore })
+      setMsg({ ok: true, text: t('checkinGot', String(r.score)) })
+      onCheckedIn?.()
+    } catch (e: any) {
+      setMsg({ ok: false, text: e.message })
+      // 可能是别处已经签过了：刷新一下状态
+      api.get<CheckinStatus>('/api/checkin/status').then(setSt).catch(() => {})
+    } finally { setBusy(false) }
+  }
+
+  const range = st.scoreMin === st.scoreMax
+    ? t('checkinFixed', String(st.scoreMin))
+    : t('checkinRange', String(st.scoreMin), String(st.scoreMax))
+  return (
+    <Paper sx={{ p: 2, flexShrink: 0 }}>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{t('checkin')}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        {st.checkedIn ? t('checkinToday', String(st.todayScore ?? 0)) : range}
+        {st.streak > 0 && ` · ${t('checkinStreak', String(st.streak))}`}
+      </Typography>
+      <Button fullWidth variant="contained" disabled={busy || st.checkedIn} onClick={doCheckin}>
+        {st.checkedIn ? t('checkedInBtn') : t('checkinBtn')}
+      </Button>
+      {msg && <Alert severity={msg.ok ? 'success' : 'error'} sx={{ mt: 1 }} onClose={() => setMsg(null)}>{msg.text}</Alert>}
     </Paper>
   )
 }

@@ -3,6 +3,8 @@ import { createContext, ReactNode, useContext, useState } from 'react'
 // 轻量中英文切换（对应旧前台的 changeLanguage）
 const dict = {
   zh: {
+    checkin: '每日签到', checkinBtn: '签到', checkedInBtn: '今日已签到', checkinRange: '每天随机获得 {0}~{1} 积分', checkinFixed: '每天获得 {0} 积分',
+    checkinGot: '签到成功，获得 {0} 积分', checkinToday: '今天获得 {0} 积分', checkinStreak: '连续签到 {0} 天',
     tags: '标签', topTen: '积分榜', publish: '发布话题', login: '登录', register: '注册', logout: '退出登录',
     profile: '个人主页', settings: '个人设置', notifications: '通知', search: '搜索', searchPlaceholder: '搜索话题',
     all: '全部', good: '精华', newest: '最新', hot: '热门', noanswer: '无人问津',
@@ -23,6 +25,8 @@ const dict = {
     notifyCollect: '{0} 收藏了你的话题 {1}', notifyOther: '{0} 与你的话题 {1} 有新动态', menu: '菜单', notFound: '页面不存在', backHome: '返回首页',
   },
   en: {
+    checkin: 'Daily check-in', checkinBtn: 'Check in', checkedInBtn: 'Checked in today', checkinRange: 'Earn {0}-{1} points at random every day', checkinFixed: 'Earn {0} points every day',
+    checkinGot: 'Checked in! +{0} points', checkinToday: 'Earned {0} points today', checkinStreak: '{0}-day streak',
     tags: 'Tags', topTen: 'Top 100', publish: 'New topic', login: 'Log in', register: 'Sign up', logout: 'Log out',
     profile: 'Profile', settings: 'Settings', notifications: 'Notifications', search: 'Search', searchPlaceholder: 'Search topics',
     all: 'All', good: 'Featured', newest: 'Newest', hot: 'Hot', noanswer: 'Unanswered',
