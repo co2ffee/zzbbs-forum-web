@@ -33,9 +33,13 @@ DOMPurify.addHook('afterSanitizeAttributes', (node) => {
 // @用户名 转成个人主页链接（跳过代码块里的内容太复杂，这里只处理行内普通文本）
 const mention = (text: string) => text.replace(/(^|[\s>])@([A-Za-z0-9]{2,16})(?=$|[\s,.;:!?，。！？])/g, '$1[@$2](/user/$2)')
 
-export function Markdown({ text, style }: { text: string; style?: string }) {
+// 评论开头的“@某人 ”是回复时自动加的，显示成“回复 某人：”，名字是个人主页链接（蓝色）
+const replyLabel = (text: string) => text.replace(/^@([A-Za-z0-9]{2,16})[ \t]+/, '回复 [$1](/user/$1)：')
+
+export function Markdown({ text, style, comment }: { text: string; style?: string; comment?: boolean }) {
   // style=RICH 的历史内容是 HTML，MD 是 markdown，统一消毒后渲染
-  const html = style === 'RICH' ? text : md.render(mention(text || ''))
+  const src = comment ? replyLabel(text || '') : text || ''
+  const html = style === 'RICH' ? text : md.render(mention(src))
   return <Box className="md" sx={{ '& img, & video': { maxWidth: '100%' }, '& pre': { overflow: 'auto', p: 1, bgcolor: 'grey.100' } }}
     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html, PURIFY_CONFIG) }} />
 }

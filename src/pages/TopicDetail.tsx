@@ -169,7 +169,7 @@ export default function TopicDetail() {
                     <Button size="small" onClick={() => setEditing(null)}>{t('cancel')}</Button>
                   </Stack>
                 </Box>
-              ) : <Markdown text={c.content} />}
+              ) : <Markdown text={c.content} comment />}
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                 <IconButton size="small" onClick={() => guard(async () => { if (!user) return nav('/login'); await api.get(`/api/comment/${c.id}/vote`); await reload() })}>
                   <ThumbUpIcon fontSize="inherit" />
