@@ -8,19 +8,19 @@ import { useAuth } from '../auth'
 import { useI18n } from '../i18n'
 import { Status, Title, useAsync } from '../components'
 
-interface Reward { text?: string | null; type?: 'image' | 'video' | null; url?: string | null }
+export interface Reward { text?: string | null; type?: 'image' | 'video' | null; url?: string | null }
 interface Product { id: number; name: string; image?: string; description?: string; score: number; unlimited: boolean; stock: number; soldOut: boolean; delivers?: string[] }
 interface ProductsData { products: Product[]; score: number }
 interface Order { id: number; productName: string; productImage?: string; score: number; status: number; remark?: string; inTime: string; reward?: Reward | null }
 
-function Cover({ name, image }: { name: string; image?: string }) {
+export function Cover({ name, image }: { name: string; image?: string }) {
   return image
     ? <Box component="img" src={image} alt={name} loading="lazy" sx={{ width: '100%', height: 160, objectFit: 'cover', display: 'block', bgcolor: 'action.hover' }} />
     : <Box sx={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'action.hover', color: 'text.secondary', fontSize: 48 }}>{name[0]}</Box>
 }
 
 // 兑换到的内容：文本（可复制）、图片、视频
-function RewardView({ reward }: { reward: Reward }) {
+export function RewardView({ reward }: { reward: Reward }) {
   const { t } = useI18n()
   const [copied, setCopied] = useState(false)
   const copy = async () => {
@@ -183,7 +183,7 @@ function MyOrders({ refreshKey }: { refreshKey: number }) {
 }
 
 // 我的兑换里点开查看兑换到的内容（取消的订单后端不再返回内容）
-function OrderReward({ reward }: { reward: Reward }) {
+export function OrderReward({ reward }: { reward: Reward }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   return (

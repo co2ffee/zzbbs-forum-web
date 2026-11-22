@@ -77,6 +77,7 @@ export default function Layout() {
                 <>
                   <Button color="inherit" component={RouterLink} to="/tags">{t('tags')}</Button>
                   <Button color="inherit" component={RouterLink} to="/exchange">{t('exchange')}</Button>
+                  <Button color="inherit" component={RouterLink} to="/market">{t('market')}</Button>
                   {!wide && <Button color="inherit" component={RouterLink} to="/top100">{t('topTen')}</Button>}
                   {searchBox(180)}
                 </>
@@ -112,6 +113,7 @@ export default function Layout() {
         {mobile && <MenuItem onClick={() => go('/tags')}>{t('tags')}</MenuItem>}
         {mobile && <MenuItem onClick={() => go('/top100')}>{t('topTen')}</MenuItem>}
         {mobile && <MenuItem onClick={() => go('/exchange')}>{t('exchange')}</MenuItem>}
+        {mobile && <MenuItem onClick={() => go('/market')}>{t('market')}</MenuItem>}
         {mobile && <Divider />}
         {user && <MenuItem onClick={() => go(`/user/${user.username}`)}>{t('profile')}</MenuItem>}
         <MenuItem onClick={() => go('/settings')}>{t('settings')}</MenuItem>
